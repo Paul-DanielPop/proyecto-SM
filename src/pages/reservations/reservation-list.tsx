@@ -5,7 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/shadcn/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/shadcn/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/shadcn/tabs"
-import { Badge, MoreHorizontal, Pencil, Plus, X } from "lucide-react"
+import {  MoreHorizontal, Pencil, Plus, X } from "lucide-react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 

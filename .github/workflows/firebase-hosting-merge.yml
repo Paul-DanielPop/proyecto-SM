@@ -12,9 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
       - name: Install dependencies with npm ci
         run: npm ci
 

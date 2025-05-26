@@ -1,10 +1,11 @@
 "use client"
 
+import { Badge } from "@/components/shadcn/badge"
 import { Button } from "@/components/shadcn/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/shadcn/dropdown-menu"
 import { Input } from "@/components/shadcn/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/shadcn/table"
-import {  MoreHorizontal, Pencil, Plus, Trash } from "lucide-react"
+import { MoreHorizontal, Pencil, Plus, Trash } from "lucide-react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
@@ -119,9 +120,9 @@ export default function ResourcesList() {
                   <TableCell>{resource.capacity}</TableCell>
                   <TableCell>{resource.schedule}</TableCell>
                   <TableCell>
-                    {/* <Badge variant={resource.status === "active" ? "default" : "secondary"}>
+                    <Badge variant={resource.status === "active" ? "default" : "secondary"}>
                       {resource.status === "active" ? "Activo" : "Inactivo"}
-                    </Badge> */}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Label } from "@/components/shadcn/label"
@@ -14,7 +13,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const navigate = useNavigate()
   /* const { toast } = useToast() */
 
   const handleSubmit = async (e: React.FormEvent) => {

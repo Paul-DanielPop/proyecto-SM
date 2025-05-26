@@ -1,12 +1,10 @@
 "use client"
 
-import { useEffect } from "react"
-import { Outlet, useNavigate } from "react-router-dom"
+import { Outlet } from "react-router-dom"
 import { AdminSidebar } from "./admin-sidebar"
 
 export default function DashboardLayout() {
   /* const { isAuthenticated } = useAuth() */
-  const navigate = useNavigate()
 
   /* useEffect(() => {
     if (!isAuthenticated) {

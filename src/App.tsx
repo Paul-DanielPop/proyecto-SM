@@ -8,7 +8,9 @@ import ResourceForm from "./pages/resources/resource-form"
 import ReservationsList from "./pages/reservations/reservation-list"
 import ReservationForm from "./pages/reservations/reservation-form"
 import UsersList from "./pages/users/users-list"
-
+import { PrivateRoute } from "./components/app/private-route"
+import RegisterPage from "./pages/register"
+import { Toaster } from "sonner"
 
 function App() {
   return (
@@ -16,20 +18,21 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<DashboardLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="resources" element={<ResourcesList />} />
-            <Route path="resources/new" element={<ResourceForm />} />
-            <Route path="resources/edit/:id" element={<ResourceForm />} />
-            <Route path="reservations" element={<ReservationsList />} />
-            <Route path="reservations/new" element={<ReservationForm />} />
-            <Route path="reservations/edit/:id" element={<ReservationForm />} />
-            <Route path="users" element={<UsersList />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/" element={<PrivateRoute roles={["user", "admin"]}><DashboardLayout /></PrivateRoute>}>
+            <Route index element={<PrivateRoute roles={["user", "admin"]}><Dashboard /></PrivateRoute>} />
+            <Route path="resources" element={<PrivateRoute roles={["user", "admin"]}><ResourcesList /></PrivateRoute>} />
+            <Route path="resources/new" element={<PrivateRoute roles={["user", "admin"]}><ResourceForm /></PrivateRoute>} />
+            <Route path="resources/edit/:id" element={<PrivateRoute roles={["user", "admin"]}><ResourceForm /></PrivateRoute>} />
+            <Route path="reservations" element={<PrivateRoute roles={["user", "admin"]}><ReservationsList /></PrivateRoute>} />
+            <Route path="reservations/new" element={<PrivateRoute roles={["user", "admin"]}><ReservationForm /></PrivateRoute>} />
+            <Route path="reservations/edit/:id" element={<PrivateRoute roles={["user", "admin"]}><ReservationForm /></PrivateRoute>} />
+            <Route path="users" element={<PrivateRoute roles={["user", "admin"]}><UsersList /></PrivateRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
       </Router>
-      {/* <Toaster /> */}
+      <Toaster richColors position="bottom-center"/>
     </>
   )
 }

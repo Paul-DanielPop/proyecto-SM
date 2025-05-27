@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { MoreHorizontal, Pencil, Plus, Trash } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -106,8 +107,42 @@ export default function ResourcesList() {
       resource.description.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const handleDelete = (id: string) => {
-    setResources(resources.filter((resource) => resource.id !== id))
+  const handleDelete = async (id: string) => {
+    try {
+      setLoading(true)
+      const response = await fetch(`${API_URL}/resources/${id}`, {
+        method: "DELETE",
+        credentials: "include", // Incluir cookies para autenticación
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast.error("No tienes permisos para eliminar recursos")
+          navigate("/login")
+          return
+        }
+        if (response.status === 403) {
+          toast.error("No tienes permisos para eliminar recursos")
+          return
+        }
+        if (response.status === 404) {
+          toast.error("El recurso no existe")
+          return
+        }
+        throw new Error(`Error al eliminar recurso: ${response.statusText}`)
+      }
+
+      setResources(resources.filter((resource) => resource.id !== id))
+      toast.success(`Recurso eliminado correctamente`)
+    } catch (error: any) {
+      console.error("Error al eliminar recurso:", error)
+      toast.error(error.message || "Error al eliminar el recurso")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const toggleStatus = (id: string) => {

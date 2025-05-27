@@ -2,14 +2,15 @@
 
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
+
 import { Send, BarChart2, MessageSquare, FileText, Bot, User, Loader2 } from "lucide-react"
+import { Separator } from "@/components/shadcn/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/shadcn/tabs"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/card"
+import { Button } from "@/components/shadcn/button"
+import { Badge } from "@/components/shadcn/badge"
+import { Input } from "@/components/shadcn/input"
+import { ScrollArea } from "@/components/shadcn/scroll-area"
 
 // Define la interfaz para los mensajes del chat
 interface Message {
@@ -18,7 +19,7 @@ interface Message {
   timestamp: Date
 }
 
-export default function App() {
+export default function Chat() {
   // Estado para el informe
   const [report, setReport] = useState<string>("")
   const [reportMessage, setReportMessage] = useState<string>("")

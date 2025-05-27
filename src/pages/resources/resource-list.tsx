@@ -6,11 +6,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/shadcn/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/shadcn/table"
 import { MoreHorizontal, Pencil, Plus, Trash } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
+const API_URL = import.meta.env.VITE_API_URL
+
 // Datos de ejemplo
-const mockResources = [
+/* const mockResources = [
   {
     id: "1",
     name: "Piscina Olímpica",
@@ -51,17 +53,57 @@ const mockResources = [
     schedule: "8:00 - 20:00",
     status: "active",
   },
-]
+] */
+
+interface Resource {
+  id: string
+  name: string
+  description: string
+  capacity: number
+  schedule: string
+  status: "active" | "inactive"
+}
 
 export default function ResourcesList() {
-  const [resources, setResources] = useState(mockResources)
+  const [resources, setResources] = useState<Resource[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    async function fetchResources() {
+      setLoading(true)
+      try {
+        const res = await fetch(`${API_URL}/resources`)
+        if (!res.ok) throw new Error("Error cargando recursos")
+        const data = await res.json()
+
+        // Adaptar datos a la estructura Resource
+        const adaptedResources: Resource[] = data.map((r: any) => ({
+          id: r._id.$oid,
+          name: r.name,
+          description: r.description,
+          capacity: parseInt(r.capacity, 10),
+          schedule: `${r.openingTime} - ${r.closingTime}`,
+          status: r.active ? "active" : "inactive",
+        }))
+
+        setResources(adaptedResources)
+        setError(null)
+      } catch (e: any) {
+        setError(e.message || "Error desconocido")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchResources()
+  }, [])
 
   const filteredResources = resources.filter(
     (resource) =>
       resource.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      resource.type.toLowerCase().includes(searchTerm.toLowerCase()),
+      resource.description.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const handleDelete = (id: string) => {
@@ -75,6 +117,9 @@ export default function ResourcesList() {
       ),
     )
   }
+
+  if (loading) return <div>Cargando recursos...</div>
+  if (error) return <div className="text-red-600">Error: {error}</div>
 
   return (
     <div className="space-y-4">
@@ -98,7 +143,7 @@ export default function ResourcesList() {
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
-              <TableHead>Tipo</TableHead>
+              <TableHead>Descripción</TableHead>
               <TableHead>Capacidad</TableHead>
               <TableHead>Horario</TableHead>
               <TableHead>Estado</TableHead>
@@ -116,7 +161,7 @@ export default function ResourcesList() {
               filteredResources.map((resource) => (
                 <TableRow key={resource.id}>
                   <TableCell className="font-medium">{resource.name}</TableCell>
-                  <TableCell>{resource.type}</TableCell>
+                  <TableCell>{resource.description}</TableCell>
                   <TableCell>{resource.capacity}</TableCell>
                   <TableCell>{resource.schedule}</TableCell>
                   <TableCell>

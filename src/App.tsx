@@ -11,6 +11,7 @@ import UsersList from "./pages/users/users-list"
 import { PrivateRoute } from "./components/app/private-route"
 import RegisterPage from "./pages/register"
 import { Toaster } from "sonner"
+import Chat from "./pages/chat/chat"
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
             <Route path="reservations/new" element={<PrivateRoute roles={["user", "admin"]}><ReservationForm /></PrivateRoute>} />
             <Route path="reservations/edit/:id" element={<PrivateRoute roles={["user", "admin"]}><ReservationForm /></PrivateRoute>} />
             <Route path="users" element={<PrivateRoute roles={["user", "admin"]}><UsersList /></PrivateRoute>} />
+            <Route path="chat" element={<PrivateRoute roles={["user", "admin"]}><Chat /></PrivateRoute>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

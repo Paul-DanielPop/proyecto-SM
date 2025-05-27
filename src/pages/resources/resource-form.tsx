@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Textarea } from "@/components/shadcn/textarea"
-
+import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
 import { Switch } from "@/components/shadcn/switch"
 import { useForm } from "react-hook-form"
@@ -13,33 +13,14 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { resourceSchema, type ResourceFormValues } from "@/lib/validations/resource"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/shadcn/form"
 
-// Tipos de recursos disponibles
-/* const resourceTypes = [
-  { value: "piscina", label: "Piscina" },
-  { value: "cancha", label: "Cancha" },
-  { value: "gimnasio", label: "Gimnasio" },
-  { value: "sala", label: "Sala" },
-  { value: "otro", label: "Otro" },
-] */
-
-// Datos de ejemplo para edición
-const mockResource = {
-  id: "1",
-  name: "Piscina Olímpica",
-  type: "piscina",
-  capacity: 50,
-  description: "Piscina olímpica de 50 metros con 8 carriles",
-  openTime: "08:00",
-  closeTime: "20:00",
-  images: [],
-  isActive: true,
-}
+const API_URL = import.meta.env.VITE_API_URL
 
 export default function ResourceForm() {
   const { id } = useParams()
   const isEditing = !!id
   const navigate = useNavigate()
-  /* const { toast } = useToast() */
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const form = useForm<ResourceFormValues>({
     resolver: zodResolver(resourceSchema),
@@ -54,33 +35,78 @@ export default function ResourceForm() {
   })
 
   useEffect(() => {
-    if (isEditing) {
-      // En un caso real, aquí se haría una petición al backend
-      // Este es solo un ejemplo para demostración
-      form.reset({
-        name: mockResource.name,
-        capacity: mockResource.capacity,
-        description: mockResource.description,
-        openTime: mockResource.openTime,
-        closeTime: mockResource.closeTime,
-        isActive: mockResource.isActive,
-      })
+    if (isEditing && id) {
+      setLoading(true)
+      fetch(`${API_URL}/resources/${id}`)
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error(`Error al cargar recurso: ${res.statusText}`)
+          }
+          const data = await res.json()
+          // Transformamos datos recibidos a la forma que espera el formulario
+          form.reset({
+            name: data.name,
+            capacity: Number(data.capacity?.["$numberInt"] ?? data.capacity ?? 0),
+            description: data.description ?? "",
+            openTime: data.openingTime ?? "",
+            closeTime: data.closingTime ?? "",
+            isActive: data.active ?? true,
+          })
+
+        })
+        .catch((err) => {
+          setError(err.message)
+        })
+        .finally(() => setLoading(false))
     }
-  }, [isEditing, form])
+  }, [isEditing, id, form])
 
-  const onSubmit = (values: ResourceFormValues) => {
-    // En un caso real, aquí se haría la petición al backend
-    // Este es solo un ejemplo para demostración
-    console.log(values)
+  const onSubmit = async (values: ResourceFormValues) => {
+    setLoading(true)
+    setError(null)
 
-    /* toast({
-      title: isEditing ? "Recurso actualizado" : "Recurso creado",
-      description: isEditing
-        ? "El recurso ha sido actualizado correctamente"
-        : "El recurso ha sido creado correctamente",
-    }) */
+    try {
+      const response = await fetch(isEditing && id ? `${API_URL}/resources/${id}` : `${API_URL}/resources`, {
+        method: isEditing ? "PUT" : "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: values.name,
+          capacity: values.capacity,
+          description: values.description,
+          openingTime: values.openTime,
+          closingTime: values.closeTime,
+          active: values.isActive
+          /* images: [], // Si quieres enviar imágenes, añade aquí la lógica */
+        }),
+      })
 
-    navigate("/resources")
+      if (!response.ok) {
+        throw new Error(`Error al ${isEditing ? "actualizar" : "crear"} recurso: ${response.statusText}`)
+      }
+
+      if (isEditing) {
+        toast.success("Recurso modificado correctamente")
+      } else {
+        toast.success("Recurso creado correctamente")
+      }
+
+      navigate("/resources")
+    } catch (err: any) {
+      setError(err.message || "Error desconocido")
+      toast.error("Algo ha salido mal")
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return <div>Cargando recurso...</div>
+  }
+
+  if (error) {
+    return <div className="text-red-600">Error: {error}</div>
   }
 
   return (

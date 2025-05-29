@@ -15,6 +15,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 
 const API_URL = import.meta.env.VITE_API_URL
 
+interface ApiError extends Error {
+  status?: number
+}
+
 export default function ResourceForm() {
   const { id } = useParams()
   const isEditing = !!id
@@ -94,15 +98,23 @@ export default function ResourceForm() {
       }
 
       navigate("/resources")
-    } catch (err: any) {
-      setError(err.message || "Error desconocido")
-      toast.error("Algo ha salido mal")
+    } catch (err) {
+      const error = err as ApiError
+      console.error("Error al modificar el recurso:", error)
+      toast.error(error.message || "Error al modificar el recurso")
       setLoading(false)
     }
   }
 
   if (loading) {
-    return <div>Cargando recurso...</div>
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2">Procesando recursos...</p>
+        </div>
+      </div>
+    )
   }
 
   if (error) {

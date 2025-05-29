@@ -12,57 +12,30 @@ import { toast } from "sonner"
 
 const API_URL = import.meta.env.VITE_API_URL
 
-// Datos de ejemplo
-/* const mockResources = [
-  {
-    id: "1",
-    name: "Piscina Olímpica",
-    type: "Piscina",
-    capacity: 50,
-    schedule: "8:00 - 20:00",
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Cancha de Tenis 1",
-    type: "Cancha",
-    capacity: 4,
-    schedule: "9:00 - 21:00",
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Sala de Pesas",
-    type: "Gimnasio",
-    capacity: 30,
-    schedule: "6:00 - 22:00",
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "Cancha de Fútbol",
-    type: "Cancha",
-    capacity: 22,
-    schedule: "10:00 - 20:00",
-    status: "inactive",
-  },
-  {
-    id: "5",
-    name: "Sala de Yoga",
-    type: "Sala",
-    capacity: 15,
-    schedule: "8:00 - 20:00",
-    status: "active",
-  },
-] */
-
-interface Resource {
+export interface Resource {
   id: string
   name: string
   description: string
   capacity: number
   schedule: string
   status: "active" | "inactive"
+}
+
+export interface ApiResource {
+  _id: {
+    $oid: string
+  }
+  name: string
+  description: string
+  capacity: string | number
+  openingTime: string
+  closingTime: string
+  active: boolean
+}
+
+// Tipo para errores de la API
+interface ApiError extends Error {
+  status?: number
 }
 
 export default function ResourcesList() {
@@ -78,22 +51,25 @@ export default function ResourcesList() {
       try {
         const res = await fetch(`${API_URL}/resources`)
         if (!res.ok) throw new Error("Error cargando recursos")
-        const data = await res.json()
 
-        // Adaptar datos a la estructura Resource
-        const adaptedResources: Resource[] = data.map((r: any) => ({
+        // Tipar la respuesta de la API
+        const data: ApiResource[] = await res.json()
+
+        // Adaptar datos a la estructura Resource con tipos seguros
+        const adaptedResources: Resource[] = data.map((r: ApiResource) => ({
           id: r._id.$oid,
           name: r.name,
           description: r.description,
-          capacity: parseInt(r.capacity, 10),
+          capacity: typeof r.capacity === 'string' ? parseInt(r.capacity, 10) : r.capacity,
           schedule: `${r.openingTime} - ${r.closingTime}`,
           status: r.active ? "active" : "inactive",
         }))
 
         setResources(adaptedResources)
         setError(null)
-      } catch (e: any) {
-        setError(e.message || "Error desconocido")
+      } catch (e) {
+        const error = e as ApiError
+        setError(error.message || "Error desconocido")
       } finally {
         setLoading(false)
       }
@@ -112,7 +88,7 @@ export default function ResourcesList() {
       setLoading(true)
       const response = await fetch(`${API_URL}/resources/${id}`, {
         method: "DELETE",
-        credentials: "include", // Incluir cookies para autenticación
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -137,7 +113,8 @@ export default function ResourcesList() {
 
       setResources(resources.filter((resource) => resource.id !== id))
       toast.success(`Recurso eliminado correctamente`)
-    } catch (error: any) {
+    } catch (e) {
+      const error = e as ApiError
       console.error("Error al eliminar recurso:", error)
       toast.error(error.message || "Error al eliminar el recurso")
     } finally {
@@ -153,7 +130,16 @@ export default function ResourcesList() {
     )
   }
 
-  if (loading) return <div>Cargando recursos...</div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2">Cargando recursos...</p>
+        </div>
+      </div>
+    )
+  }
   if (error) return <div className="text-red-600">Error: {error}</div>
 
   return (

@@ -1,86 +1,100 @@
 "use client"
 
+import { Badge } from "@/components/shadcn/badge"
 import { Button } from "@/components/shadcn/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/shadcn/dropdown-menu"
 import { Input } from "@/components/shadcn/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/shadcn/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/shadcn/tabs"
 import { MoreHorizontal, Pencil, Plus, X } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
+const API_URL = import.meta.env.VITE_API_URL
 
-// Datos de ejemplo
-const mockReservations = [
-  {
-    id: "1",
-    user: "Juan Pérez",
-    resource: "Piscina Olímpica",
-    date: "2023-05-10",
-    startTime: "10:00",
-    endTime: "12:00",
-    participants: 3,
-    status: "active",
-  },
-  {
-    id: "2",
-    user: "María López",
-    resource: "Cancha de Tenis 1",
-    date: "2023-05-11",
-    startTime: "14:00",
-    endTime: "16:00",
-    participants: 2,
-    status: "active",
-  },
-  {
-    id: "3",
-    user: "Carlos Rodríguez",
-    resource: "Sala de Pesas",
-    date: "2023-05-09",
-    startTime: "08:00",
-    endTime: "09:00",
-    participants: 1,
-    status: "completed",
-  },
-  {
-    id: "4",
-    user: "Ana Martínez",
-    resource: "Cancha de Fútbol",
-    date: "2023-05-08",
-    startTime: "16:00",
-    endTime: "18:00",
-    participants: 22,
-    status: "cancelled",
-  },
-  {
-    id: "5",
-    user: "Pedro Sánchez",
-    resource: "Sala de Yoga",
-    date: "2023-05-12",
-    startTime: "09:00",
-    endTime: "10:00",
-    participants: 8,
-    status: "active",
-  },
-]
+interface Reservation {
+  id: string
+  reservedBy: string
+  reservedByName: string
+  resource: string
+  resourceName:string
+  date: string
+  startTime: string
+  endTime: string
+  participantesId: string[]
+  nombres_participantes: string[]
+  state: "activa" | "completeda" | "cancelada"
+}
+
+interface ApiReservation {
+  _id: {
+    $oid: string
+  }
+  reservedBy: string
+  reservedByName: string
+  resource: {
+    $oid: string
+  }
+  resourceName:string
+  date: {
+    $date: string
+  }
+  startTime: {
+    $date: string
+  }
+  endTime: {
+    $date: string
+  }
+  participantesId: string[]
+  nombres_participantes: string[]
+  state: "activa" | "completeda" | "cancelada"
+}
 
 export default function ReservationsList() {
-  const [reservations, setReservations] = useState(mockReservations)
+  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("active")
+  const [activeTab, setActiveTab] = useState<Reservation["state"]>("activa")
   const navigate = useNavigate()
+
+  async function fetchReservations(): Promise<Reservation[]> {
+    const response = await fetch(`${API_URL}/reservations`);
+    if (!response.ok) throw new Error("Error al obtener las reservas");
+    const data = await response.json();
+    return data.map((r: ApiReservation) => ({
+      id: r._id?.$oid ?? "",
+      reservedBy: r.reservedBy,
+      reservedByName: r.reservedByName,
+      resource: r.resource?.$oid ?? "",
+      resourceName: r.resourceName,
+      date: new Date(r.date.$date).toLocaleDateString("es-ES"),
+      startTime: new Date(r.startTime.$date).toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' }),
+      endTime: new Date(r.endTime.$date).toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' }),
+      participantesId: r.participantesId,
+      nombres_participantes: r.nombres_participantes,
+      state: r.state,
+    }));
+  }
+
+  useEffect(() => {
+    setLoading(true)
+    fetchReservations()
+      .then(setReservations)
+      .catch((err) => console.error(err))
+      .finally(() => setLoading(false))
+  }, [])
 
   const filteredReservations = reservations.filter((reservation) => {
     const matchesSearch =
-      reservation.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reservation.resource.toLowerCase().includes(searchTerm.toLowerCase())
+      reservation.reservedByName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reservation.resourceName.toLowerCase().includes(searchTerm.toLowerCase())
 
-    if (activeTab === "active") {
-      return matchesSearch && reservation.status === "active"
-    } else if (activeTab === "completed") {
-      return matchesSearch && reservation.status === "completed"
-    } else if (activeTab === "cancelled") {
-      return matchesSearch && reservation.status === "cancelled"
+    if (activeTab === "activa") {
+      return matchesSearch && reservation.state === "activa"
+    } else if (activeTab === "completeda") {
+      return matchesSearch && reservation.state === "completeda"
+    } else if (activeTab === "cancelada") {
+      return matchesSearch && reservation.state === "cancelada"
     }
 
     return matchesSearch
@@ -89,8 +103,19 @@ export default function ReservationsList() {
   const handleCancel = (id: string) => {
     setReservations(
       reservations.map((reservation) =>
-        reservation.id === id ? { ...reservation, status: "cancelled" } : reservation,
+        reservation.id === id ? { ...reservation, state: "cancelada" } : reservation,
       ),
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2">Cargando usuarios...</p>
+        </div>
+      </div>
     )
   }
 
@@ -111,27 +136,27 @@ export default function ReservationsList() {
         </Button>
       </div>
 
-      <Tabs defaultValue="active" onValueChange={setActiveTab}>
+      <Tabs defaultValue="activa" onValueChange={(value) => setActiveTab(value as Reservation["state"])}>
         <TabsList>
-          <TabsTrigger value="active">Activas</TabsTrigger>
-          <TabsTrigger value="completed">Completadas</TabsTrigger>
-          <TabsTrigger value="cancelled">Canceladas</TabsTrigger>
+          <TabsTrigger value="activa">Activas</TabsTrigger>
+          <TabsTrigger value="completeda">Completadas</TabsTrigger>
+          <TabsTrigger value="cancelada">Canceladas</TabsTrigger>
         </TabsList>
-        <TabsContent value="active" className="mt-4">
+        <TabsContent value="activa" className="mt-4">
           <ReservationsTable
             reservations={filteredReservations}
             onCancel={handleCancel}
             onEdit={(id) => navigate(`/reservations/edit/${id}`)}
           />
         </TabsContent>
-        <TabsContent value="completed" className="mt-4">
+        <TabsContent value="completeda" className="mt-4">
           <ReservationsTable
             reservations={filteredReservations}
             onCancel={handleCancel}
             onEdit={(id) => navigate(`/reservations/edit/${id}`)}
           />
         </TabsContent>
-        <TabsContent value="cancelled" className="mt-4">
+        <TabsContent value="cancelada" className="mt-4">
           <ReservationsTable
             reservations={filteredReservations}
             onCancel={handleCancel}
@@ -144,7 +169,7 @@ export default function ReservationsList() {
 }
 
 interface ReservationsTableProps {
-  reservations: typeof mockReservations
+  reservations: Reservation[]
   onCancel: (id: string) => void
   onEdit: (id: string) => void
 }
@@ -174,27 +199,27 @@ function ReservationsTable({ reservations, onCancel, onEdit }: ReservationsTable
           ) : (
             reservations.map((reservation) => (
               <TableRow key={reservation.id}>
-                <TableCell className="font-medium">{reservation.user}</TableCell>
-                <TableCell>{reservation.resource}</TableCell>
+                <TableCell className="font-medium">{reservation.reservedByName}</TableCell>
+                <TableCell>{reservation.resourceName}</TableCell>
                 <TableCell>{reservation.date}</TableCell>
                 <TableCell>{`${reservation.startTime} - ${reservation.endTime}`}</TableCell>
-                <TableCell>{reservation.participants}</TableCell>
+                <TableCell>{`[${reservation.nombres_participantes.join(', ')}]`}</TableCell>
                 <TableCell>
-                  {/* <Badge
+                  <Badge
                     variant={
-                      reservation.status === "active"
+                      reservation.state === "activa"
                         ? "default"
-                        : reservation.status === "completed"
+                        : reservation.state === "completeda"
                           ? "outline"
                           : "destructive"
                     }
                   >
-                    {reservation.status === "active"
+                    {reservation.state === "activa"
                       ? "Activa"
-                      : reservation.status === "completed"
+                      : reservation.state === "completeda"
                         ? "Completada"
                         : "Cancelada"}
-                  </Badge> */}
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -205,7 +230,7 @@ function ReservationsTable({ reservations, onCancel, onEdit }: ReservationsTable
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {reservation.status === "active" && (
+                      {reservation.state === "activa" && (
                         <>
                           <DropdownMenuItem onClick={() => onEdit(reservation.id)}>
                             <Pencil className="h-4 w-4 mr-2" />
@@ -220,7 +245,7 @@ function ReservationsTable({ reservations, onCancel, onEdit }: ReservationsTable
                           </DropdownMenuItem>
                         </>
                       )}
-                      {reservation.status !== "active" && (
+                      {reservation.state !== "activa" && (
                         <DropdownMenuItem onClick={() => onEdit(reservation.id)}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Ver detalles

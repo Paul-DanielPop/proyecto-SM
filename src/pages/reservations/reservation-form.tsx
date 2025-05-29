@@ -5,53 +5,25 @@ import { Calendar } from "@/components/shadcn/calendar"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
 import { Checkbox } from "@/components/shadcn/checkbox"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/shadcn/form"
-import { Input } from "@/components/shadcn/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/shadcn/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/shadcn/select"
-import { cn } from "@/lib/utils"
 import { reservationSchema, type ReservationFormValues } from "@/lib/validations/reservations"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
 import { CalendarIcon, X } from "lucide-react"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useNavigate, useParams } from "react-router-dom"
+import type { ApiResource, Resource } from "../resources/resource-list"
+import type { ApiUser, User } from "../users/users-list"
+import { toast } from "sonner"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/shadcn/popover"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
 
-// Datos de ejemplo
-const mockUsers = [
-  { id: "1", name: "Juan Pérez" },
-  { id: "2", name: "María López" },
-  { id: "3", name: "Carlos Rodríguez" },
-  { id: "4", name: "Ana Martínez" },
-  { id: "5", name: "Pedro Sánchez" },
-]
+const API_URL = import.meta.env.VITE_API_URL
 
-const mockResources = [
-  { id: "1", name: "Piscina Olímpica" },
-  { id: "2", name: "Cancha de Tenis 1" },
-  { id: "3", name: "Sala de Pesas" },
-  { id: "4", name: "Cancha de Fútbol" },
-  { id: "5", name: "Sala de Yoga" },
-]
-
-const mockParticipants = [
-  { id: "1", name: "Luis García" },
-  { id: "2", name: "Elena Torres" },
-  { id: "3", name: "Roberto Díaz" },
-  { id: "4", name: "Carmen Ruiz" },
-  { id: "5", name: "Javier Moreno" },
-]
-
-// Datos de ejemplo para edición
-const mockReservation = {
-  id: "1",
-  userId: "1",
-  resourceId: "1",
-  date: new Date("2023-05-10"),
-  startTime: "10:00",
-  endTime: "12:00",
-  participants: ["2", "3"],
+interface ApiError {
+  message?: string
 }
 
 export default function ReservationForm() {
@@ -59,53 +31,234 @@ export default function ReservationForm() {
   const isEditing = !!id
   const navigate = useNavigate()
 
+  const [users, setUsers] = useState<User[]>([])
+  const [resources, setResources] = useState<Resource[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [timeSlots, setTimeSlots] = useState<string[]>([])
+
+  const [loadingCount, setLoadingCount] = useState(0)
+  const isLoading = loadingCount > 0
+
+  const startLoading = () => setLoadingCount((count) => count + 1)
+  const endLoading = () => setLoadingCount((count) => Math.max(0, count - 1))
+
+  const safeParseDate = (input: string) => {
+    const date = new Date(input)
+    return isNaN(date.getTime()) ? new Date() : date
+  }
+
+  function formatHour(dateString: string) {
+    const date = new Date(dateString)
+    return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`
+  }
+
   const form = useForm<ReservationFormValues>({
     resolver: zodResolver(reservationSchema),
     defaultValues: {
       userId: "",
       resourceId: "",
       date: new Date(),
-      startTime: "",
-      endTime: "",
+      time_slot: "",
       participants: [],
     },
   })
 
-  useEffect(() => {
-    if (isEditing) {
-      // En un caso real, aquí se haría una petición al backend
-      // Este es solo un ejemplo para demostración
-      form.reset({
-        userId: mockReservation.userId,
-        resourceId: mockReservation.resourceId,
-        date: mockReservation.date,
-        startTime: mockReservation.startTime,
-        endTime: mockReservation.endTime,
-        participants: mockReservation.participants,
+  async function fetchUsers() {
+    startLoading()
+    try {
+      const response = await fetch(`${API_URL}/users`, {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
       })
+      if (!response.ok) {
+        if (response.status === 404) {
+          setUsers([])
+          setError(null)
+          return
+        }
+        throw new Error(`Error al cargar usuarios: ${response.statusText}`)
+      }
+      const data: ApiUser[] = await response.json()
+      const adaptedUsers = data.map((u) => ({
+        id: u._id,
+        nombre: u.nombre,
+        email: u.email,
+        admin: u.admin,
+        banned: u.banned,
+      }))
+      setUsers(adaptedUsers)
+      setError(null)
+    } catch (e) {
+      const err = e as ApiError
+      setError(err.message || "Error al cargar usuarios")
+    } finally {
+      endLoading()
     }
-  }, [isEditing, form])
-
-  const onSubmit = (values: ReservationFormValues) => {
-    // En un caso real, aquí se haría la petición al backend
-    // Este es solo un ejemplo para demostración
-    console.log(values)
-
-    navigate("/reservations")
   }
+
+  async function fetchResources() {
+    startLoading()
+    try {
+      const res = await fetch(`${API_URL}/resources`)
+      if (!res.ok) throw new Error("Error cargando recursos")
+      const data: ApiResource[] = await res.json()
+      const adaptedResources: Resource[] = data.map((r) => ({
+        id: r._id.$oid,
+        name: r.name,
+        description: r.description,
+        capacity: typeof r.capacity === "string" ? parseInt(r.capacity, 10) : r.capacity,
+        schedule: `${r.openingTime} - ${r.closingTime}`,
+        status: r.active ? "active" : "inactive",
+      }))
+      setResources(adaptedResources)
+      setError(null)
+    } catch (e) {
+      const err = e as ApiError
+      setError(err.message || "Error desconocido")
+    } finally {
+      endLoading()
+    }
+  }
+
+  const fetchReservation = async () => {
+    if (!isEditing || !id) return
+    startLoading()
+    try {
+      const res = await fetch(`${API_URL}/reservations/${id}`)
+      if (!res.ok) throw new Error("Error cargando la reserva")
+      const data = await res.json()
+
+      await fetchUsers()
+      await fetchAvailability()
+
+      form.reset({
+        userId: data.reservedBy || "",
+        resourceId: data.resource?.$oid || "",
+        date: safeParseDate(data.date?.$date),
+        time_slot:
+          data.startTime?.$date && data.endTime?.$date
+            ? `${formatHour(data.startTime.$date)}-${formatHour(data.endTime.$date)}`
+            : "",
+        participants: data.participantes || [],
+      })
+
+      setError(null)
+    } catch (e) {
+      const err = e as ApiError
+      setError(err.message || "Error cargando la reserva")
+    } finally {
+      endLoading()
+    }
+  }
+
+  const fetchAvailability = async () => {
+    try {
+      const res = await fetch(`${API_URL}/reservations/availability`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resource_id: resourceId,
+          date: date.toISOString().split(".")[0] + "Z"
+        }),
+      })
+
+      const data = await res.json()
+      setTimeSlots(data.available_hours || [])
+    } catch (error) {
+      console.error("Error fetching availability", error)
+    }
+  }
+
+  useEffect(() => {
+    fetchResources()
+    fetchUsers()
+  }, [])
+
+  useEffect(() => {
+    fetchReservation()
+  }, [isEditing, id])
+
+  const resourceId = form.watch("resourceId")
+  const date = form.watch("date")
+
+  useEffect(() => {
+    if (!resourceId || !date) return
+
+    fetchAvailability()
+  }, [resourceId, date])
+
+  const onSubmit = async (values: ReservationFormValues) => {
+    startLoading()
+    setError(null)
+    const payload = {
+      userId: values.userId,
+      resourceId: values.resourceId,
+      date: values.date,
+      time_slot: values.time_slot,
+      participantes: values.participants,
+      state: "activa",
+      reservedBy: values.userId,
+      resource: values.resourceId,
+    }
+
+    try {
+      const method = isEditing ? "PUT" : "POST"
+      const url = isEditing ? `${API_URL}/reservations/${id}` : `${API_URL}/reservations`
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        const errorMsg = await res.text()
+        throw new Error(errorMsg || "Error guardando la reserva")
+      }
+
+      if (isEditing) {
+        toast.success("Reserva modificada correctamente")
+      } else {
+        toast.success("Reserva creada correctamente")
+      }
+
+      navigate("/reservations")
+    } catch (e) {
+      const err = e as ApiError
+      setError(err.message || "Error guardando la reserva")
+      toast.error(err.message || "Error al modificar el recurso")
+    } finally {
+      endLoading()
+    }
+  }
+
+  const selectedUserId = form.watch("userId")
+  const participantsOptions = users.filter((u) => u.id !== selectedUserId)
 
   const handleParticipantToggle = (participantId: string) => {
     const currentParticipants = form.getValues("participants") || []
     const isSelected = currentParticipants.includes(participantId)
-
     if (isSelected) {
-      form.setValue(
-        "participants",
-        currentParticipants.filter((id) => id !== participantId),
-      )
+      form.setValue("participants", currentParticipants.filter((id) => id !== participantId))
     } else {
       form.setValue("participants", [...currentParticipants, participantId])
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2">Procesando datos...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return <div className="text-red-600">Error: {error}</div>
   }
 
   return (
@@ -113,7 +266,9 @@ export default function ReservationForm() {
       <CardHeader>
         <CardTitle>{isEditing ? "Editar Reserva" : "Nueva Reserva"}</CardTitle>
         <CardDescription>
-          {isEditing ? "Actualice la información de la reserva" : "Complete el formulario para crear una nueva reserva"}
+          {isEditing
+            ? "Actualice la información de la reserva"
+            : "Complete el formulario para crear una nueva reserva"}
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -126,16 +281,16 @@ export default function ReservationForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Usuario</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccione un usuario" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {mockUsers.map((user) => (
+                        {users.map((user) => (
                           <SelectItem key={user.id} value={user.id}>
-                            {user.name}
+                            {user.nombre}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -150,18 +305,24 @@ export default function ReservationForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Recurso</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccione un recurso" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {mockResources.map((resource) => (
-                          <SelectItem key={resource.id} value={resource.id}>
-                            {resource.name}
-                          </SelectItem>
-                        ))}
+                        {resources.filter(r => r.status === "active").length === 0 ? (
+                          <div className="px-2 py-1 text-sm text-gray-500">No hay recursos activos</div>
+                        ) : (
+                          resources
+                            .filter((resource) => resource.status === "active")
+                            .map((resource) => (
+                              <SelectItem key={resource.id} value={resource.id}>
+                                {resource.name}
+                              </SelectItem>
+                            ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -209,26 +370,28 @@ export default function ReservationForm() {
               />
               <FormField
                 control={form.control}
-                name="startTime"
+                name="time_slot"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Hora de inicio</FormLabel>
-                    <FormControl>
-                      <Input type="time" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="endTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hora de fin</FormLabel>
-                    <FormControl>
-                      <Input type="time" {...field} />
-                    </FormControl>
+                    <FormLabel>Franja horaria</FormLabel>
+                    {timeSlots.length > 0 ? (
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione una franja horaria" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {timeSlots.map((slot) => (
+                            <SelectItem key={slot} value={slot}>
+                              {slot}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="text-sm text-muted-foreground">No hay franjas horarias disponibles</div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -239,9 +402,9 @@ export default function ReservationForm() {
               <FormLabel>Participantes adicionales</FormLabel>
               <div className="rounded-md border p-4">
                 <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                  {mockParticipants.map((participant) => {
-                    const participants = form.watch("participants") || []
-                    const isChecked = participants.includes(participant.id)
+                  {participantsOptions.map((participant) => {
+                    const participants = form.watch("participants") || [];
+                    const isChecked = participants.includes(participant.id);
 
                     return (
                       <div key={participant.id} className="flex items-center space-x-2">
@@ -250,9 +413,9 @@ export default function ReservationForm() {
                           checked={isChecked}
                           onCheckedChange={() => handleParticipantToggle(participant.id)}
                         />
-                        <label htmlFor={`participant-${participant.id}`}>{participant.name}</label>
+                        <label htmlFor={`participant-${participant.id}`}>{participant.nombre}</label>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -262,22 +425,22 @@ export default function ReservationForm() {
               control={form.control}
               name="participants"
               render={() => {
-                const participants = form.watch("participants") || []
+                const participants = form.watch("participants") || [];
 
-                if (participants.length === 0) return <></>
+                if (participants.length === 0) return <></>;
 
                 return (
                   <FormItem>
                     <FormLabel>Participantes seleccionados</FormLabel>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {participants.map((participantId) => {
-                        const participant = mockParticipants.find((p) => p.id === participantId)
+                        const participant = participantsOptions.find((p) => p.id === participantId);
                         return (
                           <div
                             key={participantId}
                             className="flex items-center rounded-full bg-secondary px-3 py-1 text-sm"
                           >
-                            {participant?.name}
+                            {participant?.nombre}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -289,14 +452,15 @@ export default function ReservationForm() {
                               <span className="sr-only">Eliminar</span>
                             </Button>
                           </div>
-                        )
+                        );
                       })}
                     </div>
                   </FormItem>
-                )
+                );
               }}
             />
           </CardContent>
+
           <CardFooter className="flex justify-between">
             <Button variant="outline" type="button" onClick={() => navigate("/reservations")}>
               Cancelar
@@ -306,5 +470,6 @@ export default function ReservationForm() {
         </form>
       </Form>
     </Card>
-  )
+  );
+
 }

@@ -11,6 +11,7 @@ import { Button } from "@/components/shadcn/button"
 import { Badge } from "@/components/shadcn/badge"
 import { Input } from "@/components/shadcn/input"
 import { ScrollArea } from "@/components/shadcn/scroll-area"
+import { VoiceRecorder } from "@/components/app/audio_input"
 
 // Define la interfaz para los mensajes del chat
 interface Message {
@@ -38,6 +39,19 @@ export default function Chat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
+
+  const onAudioRecorded = async (audioBlob: Blob) => {
+    const formData = new FormData();
+    formData.append("audio", audioBlob, "voice.webm");
+
+    const response = await fetch("http://localhost:5000/transcribe/", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    console.log("Texto transcrito:", data.text);
+  };
   // Función para enviar la pregunta al chatbot
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,21 +68,22 @@ export default function Chat() {
     setIsChatLoading(true)
 
     try {
-      const chatCloudFunctionUrl = "https://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net/chat_with_ai"
+      const chatCloudFunctionUrl = "http://127.0.0.1:5000/query/"
 
       const response = await fetch(chatCloudFunctionUrl, {
         method: "POST",
+        // credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query: userMessage.text }),
+        body: JSON.stringify({ input: userMessage.text }),
       })
 
       if (response.ok) {
         const data = await response.json()
         const aiResponse: Message = {
           sender: "ai",
-          text: data.response || "No pude generar una respuesta.",
+          text: data.response.output,
           timestamp: new Date(),
         }
         setMessages((prevMessages) => [...prevMessages, aiResponse])
@@ -286,6 +301,7 @@ export default function Chat() {
                       <Button type="submit" disabled={isChatLoading || !chatInput.trim()} size="icon">
                         {isChatLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                       </Button>
+                      <VoiceRecorder onAudioRecorded={onAudioRecorded} />
                     </form>
                   </div>
                 </div>

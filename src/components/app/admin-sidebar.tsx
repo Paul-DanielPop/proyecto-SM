@@ -1,7 +1,7 @@
 "use client"
 
 import { useNavigate, useLocation, Outlet } from "react-router-dom"
-import { LayoutDashboard, Dumbbell, Calendar, Users, LogOut, Menu } from "lucide-react"
+import { LayoutDashboard, Dumbbell, Calendar, Users, LogOut, Menu, Bot } from "lucide-react"
 /* import { useAuth } from "@/context/auth-context" */
 import {
   Sidebar,
@@ -63,6 +63,12 @@ export function AdminSidebar() {
               <SidebarMenuButton onClick={() => navigate("/users")} isActive={isActive("/users")}>
                 <Users className="h-5 w-5" />
                 <span>Usuarios</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => navigate("/chat")} isActive={isActive("/chat")}>
+                <Bot className="h-5 w-5" />
+                <span>Chatbot</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

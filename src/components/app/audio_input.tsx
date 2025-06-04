@@ -1,5 +1,4 @@
-
-import { useState,  useRef } from "react"
+import { useState, useRef } from "react"
 
 export const VoiceRecorder = ({ onAudioRecorded }: { onAudioRecorded: (blob: Blob) => void }) => {
   const [recording, setRecording] = useState(false);

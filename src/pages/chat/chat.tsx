@@ -12,6 +12,7 @@ import { Badge } from "@/components/shadcn/badge"
 import { Input } from "@/components/shadcn/input"
 import { ScrollArea } from "@/components/shadcn/scroll-area"
 import { VoiceRecorder } from "@/components/app/audio_input"
+import ReactMarkdown from 'react-markdown'
 
 // Define la interfaz para los mensajes del chat
 interface Message {
@@ -116,18 +117,20 @@ export default function Chat() {
     setReportMessage("")
     try {
       const generateReportCloudFunctionUrl =
-        "https://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net/generarInformeInstalaciones"
+        "http://127.0.0.1:5000/inform/"
       const response = await fetch(generateReportCloudFunctionUrl, {
-        method: "GET",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
       })
       if (response.ok) {
         const data = await response.json()
-        if (data.report) {
-          setReport(data.report)
+        console.log("hoola", data)
+        if (data.response.output) {
+          setReport(data.response.output)
           setReportMessage("Informe generado con éxito.")
         } else {
-          setReportMessage(data.message || "No se pudo generar el informe.")
+          setReportMessage("No se pudo generar el informe.")
         }
       } else {
         const errorData = await response.json()
@@ -206,12 +209,9 @@ export default function Chat() {
                     <h3 className="text-lg font-semibold">Informe Generado</h3>
                     <div className="rounded-md border">
                       <ScrollArea className="h-96 w-full p-4">
-                        <div
-                          className="prose prose-sm max-w-none"
-                          dangerouslySetInnerHTML={{
-                            __html: (window as any).marked?.parse(report) || report,
-                          }}
-                        />
+                        <ReactMarkdown>
+                          {report}
+                        </ReactMarkdown>
                       </ScrollArea>
                     </div>
                   </div>
@@ -259,16 +259,14 @@ export default function Chat() {
                             )}
                             <div className={`flex flex-col gap-1 max-w-[80%]`}>
                               <div
-                                className={`p-3 rounded-lg ${
-                                  msg.sender === "user" ? "bg-primary text-primary-foreground ml-auto" : "bg-muted"
-                                }`}
+                                className={`p-3 rounded-lg ${msg.sender === "user" ? "bg-primary text-primary-foreground ml-auto" : "bg-muted"
+                                  }`}
                               >
                                 {msg.text}
                               </div>
                               <span
-                                className={`text-xs text-muted-foreground ${
-                                  msg.sender === "user" ? "text-right" : "text-left"
-                                }`}
+                                className={`text-xs text-muted-foreground ${msg.sender === "user" ? "text-right" : "text-left"
+                                  }`}
                               >
                                 {formatTime(msg.timestamp)}
                               </span>

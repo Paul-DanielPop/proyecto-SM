@@ -72,7 +72,7 @@ export default function ResourceForm() {
     try {
       const response = await fetch(isEditing && id ? `${API_URL}/resources/${id}` : `${API_URL}/resources`, {
         method: isEditing ? "PUT" : "POST",
-        credentials: "include",
+        /* credentials: "include", */
         headers: {
           "Content-Type": "application/json",
         },

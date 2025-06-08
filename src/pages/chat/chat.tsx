@@ -54,7 +54,7 @@ export default function Chat() {
     const data = await response.json();
     console.log("Texto transcrito:", data.text);
   };
-  // Función para enviar la pregunta al chatbot
+  
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!chatInput.trim()) return
@@ -74,7 +74,6 @@ export default function Chat() {
 
       const response = await fetch(chatCloudFunctionUrl, {
         method: "POST",
-        // credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -111,7 +110,6 @@ export default function Chat() {
     }
   }
 
-  // Función para generar el informe de instalaciones
   const handleGenerateReport = async () => {
     setIsReportLoading(true)
     setReport("")
@@ -153,7 +151,7 @@ export default function Chat() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
+        
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Sistema de Gestión de Instalaciones</h1>
           <p className="text-muted-foreground">Genera informes y consulta información con nuestro asistente de IA</p>
@@ -230,7 +228,6 @@ export default function Chat() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="flex flex-col h-[500px]">
-                  {/* Área de mensajes */}
                   <ScrollArea className="flex-1 p-4">
                     {messages.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-center space-y-3">

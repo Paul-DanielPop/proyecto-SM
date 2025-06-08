@@ -19,14 +19,12 @@ import {
 export function AdminSidebar() {
   const navigate = useNavigate()
   const location = useLocation()
-  /* const { logout } = useAuth() */
 
   const isActive = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`)
   }
 
   const handleLogout = () => {
-    /* logout() */
     navigate("/login")
   }
 

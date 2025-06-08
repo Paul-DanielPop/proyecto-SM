@@ -52,10 +52,8 @@ export default function ResourcesList() {
         const res = await fetch(`${API_URL}/resources`)
         if (!res.ok) throw new Error("Error cargando recursos")
 
-        // Tipar la respuesta de la API
         const data: ApiResource[] = await res.json()
 
-        // Adaptar datos a la estructura Resource con tipos seguros
         const adaptedResources: Resource[] = data.map((r: ApiResource) => ({
           id: r._id.$oid,
           name: r.name,
@@ -120,14 +118,6 @@ export default function ResourcesList() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const toggleStatus = (id: string) => {
-    setResources(
-      resources.map((resource) =>
-        resource.id === id ? { ...resource, status: resource.status === "active" ? "inactive" : "active" } : resource,
-      ),
-    )
   }
 
   if (loading) {
@@ -202,9 +192,6 @@ export default function ResourcesList() {
                         <DropdownMenuItem onClick={() => navigate(`/resources/edit/${resource.id}`)}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toggleStatus(resource.id)}>
-                          {resource.status === "active" ? "Desactivar" : "Activar"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"

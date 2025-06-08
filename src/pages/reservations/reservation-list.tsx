@@ -118,10 +118,8 @@ export default function ReservationsList() {
 
     if (reservation?.state === "activa") {
       payload = {
-        date: reservation.date,
-        time_slot: reservation.startTime && reservation.endTime
-          ? `${formatHour(reservation.startTime)}-${formatHour(reservation.endTime)}`
-          : "",
+        date: new Date(reservation.date),
+        time_slot: `${reservation.startTime}-${reservation.endTime}`,
         reservedBy: reservation.reservedBy,
         resource: reservation.resource,
         state: "cancelada"

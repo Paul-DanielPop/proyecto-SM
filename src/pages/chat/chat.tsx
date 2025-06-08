@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/shadcn/scroll-area"
 import { VoiceRecorder } from "@/components/app/audio_input"
 import ReactMarkdown from 'react-markdown'
 
+const API_URL = import.meta.env.VITE_API_URL
 // Define la interfaz para los mensajes del chat
 interface Message {
   sender: "user" | "ai"
@@ -45,7 +46,7 @@ export default function Chat() {
     const formData = new FormData();
     formData.append("audio", audioBlob, "voice.webm");
 
-    const response = await fetch("http://localhost:5000/transcribe/", {
+    const response = await fetch(`${API_URL}/transcribe/`, {
       method: "POST",
       body: formData,
     });
@@ -69,7 +70,7 @@ export default function Chat() {
     setIsChatLoading(true)
 
     try {
-      const chatCloudFunctionUrl = "http://127.0.0.1:5000/query/"
+      const chatCloudFunctionUrl = `${API_URL}/query/`
 
       const response = await fetch(chatCloudFunctionUrl, {
         method: "POST",
@@ -116,9 +117,7 @@ export default function Chat() {
     setReport("")
     setReportMessage("")
     try {
-      const generateReportCloudFunctionUrl =
-        "http://127.0.0.1:5000/inform/"
-      const response = await fetch(generateReportCloudFunctionUrl, {
+      const response = await fetch(`${API_URL}/inform/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),

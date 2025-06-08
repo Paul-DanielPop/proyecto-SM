@@ -120,14 +120,6 @@ export default function ResourcesList() {
     }
   }
 
-  const toggleStatus = (id: string) => {
-    setResources(
-      resources.map((resource) =>
-        resource.id === id ? { ...resource, status: resource.status === "active" ? "inactive" : "active" } : resource,
-      ),
-    )
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -200,9 +192,6 @@ export default function ResourcesList() {
                         <DropdownMenuItem onClick={() => navigate(`/resources/edit/${resource.id}`)}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => toggleStatus(resource.id)}>
-                          {resource.status === "active" ? "Desactivar" : "Activar"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive"

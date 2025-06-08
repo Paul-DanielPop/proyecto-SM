@@ -57,11 +57,6 @@ export default function ReservationsList() {
   const [activeTab, setActiveTab] = useState<Reservation["state"]>("activa")
   const navigate = useNavigate()
 
-  function formatHour(dateString: string) {
-    const date = new Date(dateString)
-    return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`
-  }
-
   async function fetchReservations(): Promise<Reservation[]> {
     const response = await fetch(`${API_URL}/reservations`);
     if (!response.ok) throw new Error("Error al obtener las reservas");

@@ -154,12 +154,14 @@ export default function ReservationForm() {
 
   const fetchAvailability = async () => {
     try {
+      const formattedDate = new Date(date)
+      formattedDate.setHours(date.getHours() + 2)
       const res = await fetch(`${API_URL}/reservations/availability`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           resource_id: resourceId,
-          date: date.toISOString().split(".")[0] + "Z"
+          date: formattedDate.toISOString().split(".")[0] + "Z"
         }),
       })
 

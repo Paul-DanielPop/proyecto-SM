@@ -111,9 +111,16 @@ export default function ReservationsList() {
     const reservation = reservations.find((reservation) => reservation.id === id)
     let payload = null
 
+    if (!reservation?.date) {
+      return
+    }
+
+    const [day, month, year] = reservation.date.split("/").map(Number)
+    const date = new Date(year, month - 1, day) // month va de 0 a 11
+
     if (reservation?.state === "activa") {
       payload = {
-        date: new Date(reservation.date),
+        date: date,
         time_slot: `${reservation.startTime}-${reservation.endTime}`,
         reservedBy: reservation.reservedBy,
         resource: reservation.resource,

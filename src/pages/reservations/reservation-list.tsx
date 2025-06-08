@@ -57,6 +57,11 @@ export default function ReservationsList() {
   const [activeTab, setActiveTab] = useState<Reservation["state"]>("activa")
   const navigate = useNavigate()
 
+  function formatHour(dateString: string) {
+    const date = new Date(dateString)
+    return `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}`
+  }
+
   async function fetchReservations(): Promise<Reservation[]> {
     const response = await fetch(`${API_URL}/reservations`);
     if (!response.ok) throw new Error("Error al obtener las reservas");
@@ -110,8 +115,17 @@ export default function ReservationsList() {
   const handleCancel = async (id: string) => {
     const reservation = reservations.find((reservation) => reservation.id === id)
     let payload = null
+
     if (reservation?.state === "activa") {
-      payload = {state:"cancelada"}
+      payload = {
+        date: reservation.date,
+        time_slot: reservation.startTime && reservation.endTime
+          ? `${formatHour(reservation.startTime)}-${formatHour(reservation.endTime)}`
+          : "",
+        reservedBy: reservation.reservedBy,
+        resource: reservation.resource,
+        state: "cancelada"
+      }
     }
     await fetch(`${API_URL}/reservations/${id}`, {
       method: "PUT",

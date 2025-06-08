@@ -203,10 +203,13 @@ export default function ReservationForm() {
     startLoading()
     setError(null)
 
+    const temp = new Date(values.date)
+    const formattedDate = temp.setHours(values.date.getHours() + 2)
+
     const payload = {
       userId: values.userId,
       resourceId: values.resourceId,
-      date: values.date,
+      date: formattedDate,
       time_slot: values.time_slot,
       participantes: values.participants,
       state: "activa",

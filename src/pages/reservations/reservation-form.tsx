@@ -203,8 +203,8 @@ export default function ReservationForm() {
     startLoading()
     setError(null)
 
-    const temp = new Date(values.date)
-    const formattedDate = temp.setHours(values.date.getHours() + 2)
+    const formattedDate = new Date(values.date)
+    formattedDate.setHours(values.date.getHours() + 2)
 
     const payload = {
       userId: values.userId,

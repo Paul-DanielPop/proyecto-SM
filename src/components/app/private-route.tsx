@@ -23,6 +23,9 @@ export function PrivateRoute({ children, roles }: { children: JSX.Element; roles
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, {
           method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
           credentials: "include", // <-- importante para enviar la cookie
         })
 

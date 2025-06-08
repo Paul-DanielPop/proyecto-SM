@@ -203,27 +203,16 @@ export default function ReservationForm() {
     startLoading()
     setError(null)
 
-    // Restar 2 horas al time_slot para ajustar con backend (UTC0)
-    const [start, end] = values.time_slot.split("-")
-    const [startH, startM] = start.split(":").map(Number)
-    const [endH, endM] = end.split(":").map(Number)
-
-    const adjustedStart = `${String(startH - 2).padStart(2, "0")}:${String(startM).padStart(2, "0")}`
-    const adjustedEnd = `${String(endH - 2).padStart(2, "0")}:${String(endM).padStart(2, "0")}`
-    const adjustedTimeSlot = `${adjustedStart}-${adjustedEnd}`
-
     const payload = {
       userId: values.userId,
       resourceId: values.resourceId,
       date: values.date,
-      time_slot: adjustedTimeSlot,
+      time_slot: values.time_slot,
       participantes: values.participants,
       state: "activa",
       reservedBy: values.userId,
       resource: values.resourceId,
     }
-
-    console.log("Payload: ", payload)
 
     try {
       const method = isEditing ? "PUT" : "POST"

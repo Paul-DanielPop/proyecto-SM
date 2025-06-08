@@ -107,7 +107,17 @@ export default function ReservationsList() {
     return matchesSearch
   })
 
-  const handleCancel = (id: string) => {
+  const handleCancel = async (id: string) => {
+    const reservation = reservations.find((reservation) => reservation.id === id)
+    let payload = {}
+    if (reservation?.state === "activa") {
+      payload = {state:"cancelada" }
+    }
+    await fetch(`${API_URL}/reservations/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
     setReservations(
       reservations.map((reservation) =>
         reservation.id === id ? { ...reservation, state: "cancelada" } : reservation,

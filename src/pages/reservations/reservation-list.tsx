@@ -17,7 +17,7 @@ interface Reservation {
   reservedBy: string
   reservedByName: string
   resource: string
-  resourceName:string
+  resourceName: string
   date: string
   startTime: string
   endTime: string
@@ -35,7 +35,7 @@ interface ApiReservation {
   resource: {
     $oid: string
   }
-  resourceName:string
+  resourceName: string
   date: {
     $date: string
   }
@@ -61,6 +61,7 @@ export default function ReservationsList() {
     const response = await fetch(`${API_URL}/reservations`);
     if (!response.ok) throw new Error("Error al obtener las reservas");
     const data = await response.json();
+
     return data.map((r: ApiReservation) => ({
       id: r._id?.$oid ?? "",
       reservedBy: r.reservedBy,
@@ -68,8 +69,14 @@ export default function ReservationsList() {
       resource: r.resource?.$oid ?? "",
       resourceName: r.resourceName,
       date: new Date(r.date.$date).toLocaleDateString("es-ES"),
-      startTime: new Date(r.startTime.$date).toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' }),
-      endTime: new Date(r.endTime.$date).toLocaleTimeString("es-ES", { hour: '2-digit', minute: '2-digit' }),
+      startTime: new Date(new Date(r.startTime.$date).getTime() - 2 * 60 * 60 * 1000).toLocaleTimeString("es-ES", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      endTime: new Date(new Date(r.endTime.$date).getTime() - 2 * 60 * 60 * 1000).toLocaleTimeString("es-ES", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
       participantesId: r.participantesId,
       nombres_participantes: r.nombres_participantes,
       state: r.state,

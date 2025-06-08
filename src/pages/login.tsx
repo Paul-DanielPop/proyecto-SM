@@ -26,7 +26,6 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
-  //const { login } = useAuth()
   const navigate = useNavigate()
 
   const form = useForm<LoginFormValues>({

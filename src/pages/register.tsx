@@ -65,7 +65,6 @@ export default function RegisterPage() {
 
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password)
 
-      // Guardar nombre en el perfil del usuario
       await updateProfile(userCredential.user, {
         displayName: values.name,
       })

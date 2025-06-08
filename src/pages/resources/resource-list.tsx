@@ -52,10 +52,8 @@ export default function ResourcesList() {
         const res = await fetch(`${API_URL}/resources`)
         if (!res.ok) throw new Error("Error cargando recursos")
 
-        // Tipar la respuesta de la API
         const data: ApiResource[] = await res.json()
 
-        // Adaptar datos a la estructura Resource con tipos seguros
         const adaptedResources: Resource[] = data.map((r: ApiResource) => ({
           id: r._id.$oid,
           name: r.name,

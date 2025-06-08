@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-/* import { Toaster } from "@/components/shadcn/sonner" */
 import LoginPage from "./pages/login"
 import Dashboard from "./pages/dashboard"
 import DashboardLayout from "./components/app/dashboard-layout"

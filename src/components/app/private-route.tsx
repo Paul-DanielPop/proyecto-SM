@@ -7,6 +7,8 @@ interface AuthUser {
   role: boolean
 }
 
+/* Componente que se usa como wrapper alrededor de páginas 
+que solo queramos que sean accesible por usuarios admin */
 export function PrivateRoute({ children, roles }: { children: JSX.Element; roles?: ("admin" | "user")[] }) {
   const [loading, setLoading] = useState(true)
   const [allowed, setAllowed] = useState(false)
@@ -23,7 +25,7 @@ export function PrivateRoute({ children, roles }: { children: JSX.Element; roles
       try {
         const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/me`, {
           method: "GET",
-          credentials: "include", // <-- importante para enviar la cookie
+          credentials: "include",
         })
 
         if (!res.ok) throw new Error("No autenticado")

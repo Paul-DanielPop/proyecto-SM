@@ -68,13 +68,6 @@ export default function UsersList() {
       }
 
       const data: ApiUser[] = await response.json()
-      /* console.log("Users from API: ", data)
-
-      // Verificar la estructura de los datos
-      if (data.length > 0) {
-        console.log("First user structure:", data[0].nombre)
-        console.log("Available properties:", Object.keys(data[0]))
-      } */
 
       // Adaptar datos de la API al formato del componente
       const adaptedUsers: User[] = data.map((apiUser) => ({
@@ -110,7 +103,6 @@ export default function UsersList() {
       })
 
       if (!response.ok) {
-        // Leer el cuerpo de la respuesta para ver el error específico
         const errorData = await response.text()
         console.log('Error response body:', errorData)
 
@@ -127,7 +119,6 @@ export default function UsersList() {
           return
         }
         if (response.status === 400) {
-          // Mostrar el error específico de validación
           let errorMessage = "Error de validación"
           try {
             const errorJson = JSON.parse(errorData)
@@ -145,10 +136,6 @@ export default function UsersList() {
         throw new Error(`Error al actualizar usuario: ${response.statusText}`)
       }
 
-      /* const responseData = await response.json()
-      console.log('Successful response:', responseData) */
-
-      // Actualizar el estado local
       setUsers(prevUsers =>
         prevUsers.map(user =>
           user.id === userId

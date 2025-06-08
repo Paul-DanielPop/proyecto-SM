@@ -83,7 +83,6 @@ export default function ResourceForm() {
           openingTime: values.openTime,
           closingTime: values.closeTime,
           active: values.isActive
-          /* images: [], // Si quieres enviar imágenes, añade aquí la lógica */
         }),
       })
 
